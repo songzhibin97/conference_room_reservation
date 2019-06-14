@@ -1,0 +1,10 @@
+Django实现的会议室预定程序
+1.启动Django程序
+2.登录
+    http://127.0.0.1:8000/login/
+    账户 shuaibinbin
+    密码 bin123456
+    提示登录成功即可
+3.进入
+    http://127.0.0.1:8000/conference_room/
+    进行会议室预定取消功能

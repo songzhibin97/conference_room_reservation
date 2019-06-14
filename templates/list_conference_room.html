@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CH">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <title>conference_room</title>
+    {#引入bootstrap样式css文件#}
+    <link rel="stylesheet" href="/static/bootstrap-3.3.7-dist/css/bootstrap.min.css">
+    <style>
+        {#.current_user 设置会议室预定是当前登录人背景#}
+        .current_user {
+            background-color: #80e0a2;
+        }
+
+        {#.current_user 设置会议室预定非当前登录人背景#}
+        .uncuurrent_user {
+            background-color: #9efdfd;
+        }
+
+        {# 新增预定临时样式 #}
+        .new_current_user {
+            background-color: #3e8f3e;
+        }
+    </style>
+</head>
+<body>
+{#引入bootstrap面板样式#}
+<div class="panel panel-default">
+    <div class="panel-heading"><h3>会议室预定2.0</h3></div>
+    <div class="panel-body">
+        <h4>预定日期:{{ get_date|date:"Y-m-d" }}</h4>
+        <table class="table table-bordered table-striped">
+            {#表头使用循环time_list做出#}
+            <thead>
+            <tr>
+                <th>
+                    会议室/时间
+                </th>
+                {% for time in time_list %}
+                    <th>
+                        {{ time.1 }}
+                    </th>
+                {% endfor %}
+            </tr>
+            </thead>
+            {#内容通过后端的特殊处理直接传回html代码safe即可#}
+            <tbody>
+            {{ html|safe }}
+            </tbody>
+        </table>
+    </div>
+    <button id="save" class="btn btn-default col-sm-offset-11">保存</button>
+</div>
+{#引入jQuery js文件#}
+<script src="/static/jquery-3.3.1.js"></script>
+{#引入bootstrap样式js文件#}
+<script src="/static/bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
+{#插入前端页面js样式#}
+<script>
+    {# 声明变量 用于向后端的数据传输 为双层字典结构 会议室:[时间段]#}
+    var send_data = {
+        "add": {},
+        "del": {}
+    };
+    {#引用删除指定数组的函数#}
+
+    {#找到所有可以选定的状态标签 class=selectable 绑定触发事件#}
+    $(".selectable").on("click", function () {
+        {# 获取当前点击事件的room_id 和  time_id #}
+        var room_id = $(this).attr("room_id");
+        var time_id = $(this).attr("time_id");
+        {#取消预定 如果选定用户有current_user属性 则为原先已预定 取消预定操作#}
+        if ($(this).hasClass("current_user")) {
+            $(this).removeClass("current_user").empty();
+            if (send_data.del[room_id]) { {# 如果send_data.del中已存在room_id的键,则在此基础上添加 #}
+                send_data.del[room_id].push(time_id)
+            } else {
+                send_data.del[room_id] = [time_id]
+            }
+        }
+            {#临时取消 从send_data.add中删除相应增加的内容并清空class标记位#}
+        else if ($(this).hasClass("new_current_user")) {
+            $(this).removeClass("new_current_user");
+            send_data.add[room_id].filter(iter => iter != [time_id])
+        }
+            {#新增预定#}
+        else {
+            $(this).addClass("new_current_user");
+            if (send_data.add[room_id]) {
+                send_data.add[room_id].push(time_id)
+            } else {
+                send_data.add[room_id] = [time_id]
+            }
+        }
+    });
+    {#找到所有不可选定的状态标签 class=unselectable 绑定触发事件#}
+    $(".unselectable").on("click", function () {
+        alert("不可以修改别人预定的会议室哟")
+    });
+    {#点击保存发送ajax请求#}
+    $("#save").on('click', function () {
+        if (send_data) {   {# 如果有修改数据发生ajax请求 #}
+            $.ajax({
+                url: '/conference_room/',
+                type: 'POST',
+                contentType: "application/json",
+                data: JSON.stringify(send_data),
+                success: function (data) {
+                    alert(data);
+                    location.reload()
+                }
+            })
+        } else {
+            alert("您没有任何修改操作哟");
+
+
+        }
+
+    })
+</script>
+</body>
+</html>
